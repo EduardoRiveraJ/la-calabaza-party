@@ -660,6 +660,29 @@ function applyLang(lang){
 }
 applyLang(pickInitialLang());
 
+/* ---------- RSVP por WhatsApp ----------
+   En móvil, los enlaces wa.me a veces abren la web de WhatsApp ("descarga la app") en lugar de la app:
+   pasa dentro del navegador interno de WhatsApp/Instagram o si el iPhone recordó "abrir en Safari".
+   Por eso en móvil abrimos la app directamente con whatsapp:// y, si no responde, usamos la web como respaldo. */
+var IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+$("btn-rsvp").addEventListener("click", function(e){
+  if (!IS_MOBILE) return;                                   // escritorio: wa.me en pestaña nueva (WhatsApp Web / app de escritorio)
+  e.preventDefault();
+  var q = "phone=" + WHATSAPP_PHONE + "&text=" + encodeURIComponent(RSVP_MESSAGE[LANG]);
+  var left = false;
+  function gone(){ left = true; }
+  document.addEventListener("visibilitychange", gone);
+  window.addEventListener("pagehide", gone);
+  window.addEventListener("blur", gone);
+  window.location.href = "whatsapp://send?" + q;            // abre la app de WhatsApp directamente
+  setTimeout(function(){
+    document.removeEventListener("visibilitychange", gone);
+    window.removeEventListener("pagehide", gone);
+    window.removeEventListener("blur", gone);
+    if (!left && !document.hidden) window.location.href = "https://api.whatsapp.com/send?" + q;   // respaldo si no hay app
+  }, 1600);
+});
+
 var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 var SVGNS = "http://www.w3.org/2000/svg";
 function rnd(a, b){ return a + Math.random() * (b - a); }
